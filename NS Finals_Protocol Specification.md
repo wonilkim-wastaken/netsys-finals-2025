@@ -27,6 +27,7 @@ MESSAGE:"<message>"
 When server needs to send message to client, it should follow following structure.
 The request can be sent as JSON for easy implementation.
 ```
+TYPE:"RESPONSE",
 CODE:<RESPONSE CODE>,
 MESSAGE:"<message>"
 ```
@@ -35,6 +36,7 @@ Response messages are used to tell client request was successfully handled or no
 Notifications are special responses that tells client what action happened on server.
 Based on notification, client can choose what to do afterwards.
 ```
+TYPE: "NOTIFICATION"
 EVENT:<EVENT_ID>
 SENDER:<SenderID>
 MESSAGE:"<message>"
