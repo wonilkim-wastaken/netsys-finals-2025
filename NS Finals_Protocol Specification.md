@@ -36,9 +36,9 @@ Response messages are used to tell client request was successfully handled or no
 Notifications are special responses that tells client what action happened on server.
 Based on notification, client can choose what to do afterwards.
 ```
-TYPE: "NOTIFICATION"
-EVENT:<EVENT_ID>
-SENDER:<SenderID>
+TYPE: "NOTIFICATION",
+EVENT:<EVENT_ID>,
+SENDER:<SenderID>,
 MESSAGE:"<message>"
 ```
 Notifications are used to tell client *what is happened and what to do*.
@@ -67,6 +67,10 @@ Notifications are used to tell client *what is happened and what to do*.
   state: always
 ```
 :quit
+```
+- **login**: specifies own username to server. Server registers userID when it gets `login` request
+```
+:login <userID/ClientID>
 ```
 - (Optional) **file**: send file to chat
   state: connected
