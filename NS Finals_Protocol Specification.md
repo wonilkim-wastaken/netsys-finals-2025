@@ -25,7 +25,6 @@ MESSAGE:"<message>"
 ```
 # Responses (Server)
 When server needs to send message to client, it should follow following structure.
-The request can be sent as JSON for easy implementation.
 ```
 TYPE:"RESPONSE",
 CODE:<RESPONSE CODE>,
@@ -34,7 +33,8 @@ MESSAGE:"<message>"
 Response messages are used to tell client request was successfully handled or not.
 # Notifications (Server)
 Notifications are special responses that tells client what action happened on server.
-Based on notification, client can choose what to do afterwards.
+Based on notification, client can choose what to do afterwards.  
+Notification are sent to clients based on server activities.
 ```
 TYPE: "NOTIFICATION",
 EVENT:<EVENT_ID>,
@@ -53,7 +53,7 @@ Notifications are used to tell client *what is happened and what to do*.
 ```
 "<message>"
 ```
-- **connect**: connect client to to chat associated to another client(user)
+- **connect**: connect client to chat associated to another client(user)
   state: disconnected
 ```
 :connect <ClientID>
@@ -85,8 +85,13 @@ For intuition, the structure imitated HTTP response code.
 - **404 (Not found)**: Resource does not exist
 - **405 (Method Not Allowed)**: Action invalid for current state
 - **500 (Internal Server Error)**: Undefined errors
+# Response Message Definition
+- LOGIN_SUCCESS / LOGIN_FAIL / LOGIN_USERNAME_ALREADY_USED
+- MESSAGE_SENT / MESSAGE_FAILED
+- JOIN_CHAT_SUCCESS / JOIN_CHAT_FAILED
+- LEAVE_CHAT_SUCCESS / LEAVE_CHAT_FAILED
+- QUIT_APPROVED: Client's quit request was approved
 # Event Definition
-- **NEW_MSG**: User sent new message.
-- **USER_CONNECTED**: Client connected to the chat.
-- **USER_DISCONNECTED**: Client disconnected from the chat.
-- (Optional) **FILE_SENT**: Client sent the file
+- **CLIENT_JOINED**: Client joined the chat.
+- **CLIENT_LEFT**: Client left the chat.
+- **MESSAGE_SENT**: Client received the message. / Server sent the message.
