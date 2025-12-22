@@ -58,19 +58,18 @@ public class ServerHandler {
         switch (cmd){
             case "login":
                 if (args.length < 1){
-                    // TODO : SEND ERR
-                    writer.write("Missing username!");
+                    writer.write("RESPONSE 400 INCORRECT_PARAMETERS");
                     break;
                 }
                 String newName = args[0];
                 Socket clientSocket = connectedUser.remove(selfUser);
                 connectedUser.put(newName, clientSocket);
                 socketToUser.put(clientSocket, newName);
+                writer.write("RESPONSE 200 LOGIN_SUCCESS");
                 break;
             case "connect":
                 if (args.length < 1){
-                    // TODO: SEND ERR
-                    writer.write("Missing ID!");
+                    writer.write("RESPONSE 400 INCORRECT_PARAMETERS");
                     break;
                 }
                 Chat chat = null;
@@ -78,13 +77,14 @@ public class ServerHandler {
                     if (chatList.get(i).user1.equals(args[0]) && chatList.get(i).user2.equals(selfUser)){
                         chat = chatList.get(i);
                         chatMap.put(selfUser, chat);
-                        // TODO : SEND CONNECTED CMD
+                        writer.write("RESPONSE 200 CONNECTED");
                     }
                 }
                 if (chat == null){
                     // TODO : SEND CONNECTED CMD
                     chat = new Chat(selfUser, args[0]);
                     chatMap.put(selfUser, chat);
+                    writer.write("RESPONSE 200 CONNECTED");
                 }
                 break;
             case "disconnect":
@@ -119,13 +119,13 @@ public class ServerHandler {
                 BufferedWriter newWriter = new BufferedWriter(new OutputStreamWriter(out));
 
                 //TODO: SEND MSG CMD
-                newWriter.write(message);
+                newWriter.write("NOTIFICATION MESSAGE_SENT " + selfUser + " " + message);
                 break;
             }
             case "file": {
                 Chat activeChat = chatMap.get(selfUser);
                 if (activeChat == null) {
-                    //TODO: SEND ERR
+                    writer.write("RESPONSE 400 NOT_IN_CHAT");
                     break;
                 }
                 String userToSend;
