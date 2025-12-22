@@ -21,14 +21,14 @@ The request can be sent as JSON for easy implementation.
 SENDER:<SenderID>,
 SENDEE:<SendeeID>,
 METHOD:<COMMAND>,
-MESSAGE:"<message>"
+MESSAGE:<message>
 ```
 # Responses (Server)
 When server needs to send message to client, it should follow following structure.
 ```
-TYPE:"RESPONSE",
+TYPE:RESPONSE,
 CODE:<RESPONSE CODE>,
-MESSAGE:"<message>"
+MESSAGE:<message>
 ```
 Response messages are used to tell client request was successfully handled or not.
 # Notifications (Server)
@@ -36,10 +36,10 @@ Notifications are special responses that tells client what action happened on se
 Based on notification, client can choose what to do afterwards.  
 Notification are sent to clients based on server activities.
 ```
-TYPE: "NOTIFICATION",
+TYPE:NOTIFICATION,
 EVENT:<EVENT_ID>,
 SENDER:<SenderID>,
-MESSAGE:"<message>"
+MESSAGE:<message>
 ```
 Notifications are used to tell client *what is happened and what to do*.
 # State Definition
@@ -85,12 +85,13 @@ For intuition, the structure imitated HTTP response code.
 - **404 (Not found)**: Resource does not exist
 - **405 (Method Not Allowed)**: Action invalid for current state
 - **500 (Internal Server Error)**: Undefined errors
-# Response Message Definition
+# Response Message Definition (Neccesary Ones)
 - LOGIN_SUCCESS / LOGIN_FAIL / LOGIN_USERNAME_ALREADY_USED
 - MESSAGE_SENT / MESSAGE_FAILED
 - JOIN_CHAT_SUCCESS / JOIN_CHAT_FAILED
 - LEAVE_CHAT_SUCCESS / LEAVE_CHAT_FAILED
-- QUIT_APPROVED: Client's quit request was approved
+- QUIT_APPROVED
+
 # Event Definition
 - **CLIENT_JOINED**: Client joined the chat.
 - **CLIENT_LEFT**: Client left the chat.

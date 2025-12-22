@@ -27,52 +27,6 @@ public class ClientHandler {
         this.out = new PrintWriter(this.client.getOutputStream(), true);
     }
 
-    private String requestParser(String msg) {
-        String request = null;
-
-        if (msg == null || msg.isEmpty()) {
-            return request;
-        }
-
-        msg = msg.trim();
-
-        if (!msg.startsWith(":")) {
-            msg = ":message " + msg;
-        }
-
-        String[] tokens = msg.split("\\s+", 2);
-        String command = tokens[0].toLowerCase();
-        String payload = (tokens.length > 1) ? tokens[1] : null;
-
-        switch (command) {
-            case ":message":
-                // TODO - Need to add SendeeID checking logic
-                break;
-
-            case ":connect":
-                if (payload == null) {
-                    System.err.println("Usage: :connect <username>");
-                    break;
-                }
-                request = requestBuilder("connect", this.username, payload, "Request for connection");
-                break;
-
-            case ":disconnect":
-                // TODO - Need to figure out how to save connection info.
-                break;
-
-            case ":quit":
-                // Quit just closes socket.
-                request = requestBuilder("quit", this.username, "SERVER", "User quitted");
-                break;
-
-            default:
-                System.err.println("Unknown command: " + command);
-        }
-
-        return request;
-    }
-
     private void promptLogin() {
         Scanner input = new Scanner(System.in);
         System.out.println("Enter your username: ");
@@ -83,6 +37,7 @@ public class ClientHandler {
 
         // TODO - response logic needed to be added
         // notify success needed
+        setName(username);
     }
 
     private static String requestBuilder(String command, String senderName, String SendeeName, String payload) {
@@ -117,8 +72,7 @@ public class ClientHandler {
             while (true) {
                 // Message sending ops.
                 String message = consoleIn.readLine();
-                String request = handler.requestParser(message);
-                handler.sendMessage(request);
+                handler.sendMessage(message);
             }
         }
         catch (IOException e) {
