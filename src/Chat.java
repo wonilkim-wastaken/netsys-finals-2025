@@ -3,11 +3,12 @@ import java.util.List;
 
 public class Chat {
 
-    private int userID1;
-    private int userID2;
-    private List<String> messageHistory;
+    private final String userID1;
+    private final String userID2;
+    private final List<String> messageHistory;
+    private String fileContents;
 
-    public Chat(int userID1, int userID2) {
+    public Chat(String userID1, String userID2) {
         this.userID1 = userID1;
         this.userID2 = userID2;
         this.messageHistory = new ArrayList<String>();
@@ -17,7 +18,7 @@ public class Chat {
         messageHistory.add(message);
     }
 
-    public void sendMessage(int senderID, String message) {
+    public void sendMessage(String senderID, String message) {
         if (senderID != userID1 && senderID != userID2) {
             throw new IllegalArgumentException("Invalid sender");
         }
@@ -26,7 +27,7 @@ public class Chat {
         messageHistory.add(record);
     }
 
-    public void sendFile(int senderID, String filePath) {
+    public void sendFile(String senderID, String filePath) {
         if (senderID != userID1 && senderID != userID2) {
             throw new IllegalArgumentException("Invalid sender");
         }
@@ -47,7 +48,7 @@ public class Chat {
         return new ArrayList<String>(messageHistory);
     }
 
-    public int getOpponent(int senderID) {
+    public String getOpponent(String senderID) {
         if (senderID == userID1) {
             return userID2;
         }
@@ -58,4 +59,17 @@ public class Chat {
 
         throw new IllegalArgumentException("User not found");
     }
+
+    public void setFile(String fileContents) {
+        this.fileContents = fileContents;
+    }
+
+    public String getFile() {
+        return fileContents;
+    }
+
+    public void clearFile() {
+        this.fileContents = null;
+    }
 }
+
