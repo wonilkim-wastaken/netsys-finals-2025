@@ -12,154 +12,251 @@ public class ServerHandler {
 
     // Chat storage
     private List<Chat> chatList = Collections.synchronizedList(new ArrayList<>());
-    private Map<String, Socket> connectedUser = new ConcurrentHashMap<>();
-    private Map<Socket, String> socketToUser = new ConcurrentHashMap<>();
-    private Map<String, Chat> chatMap = new ConcurrentHashMap<>();
+    private List<User>  userList = Collections.synchronizedList(new ArrayList<>());
+    private Map<User, Chat> chatMap = new ConcurrentHashMap<>();
 
-    private void ParseMessage(String message, Writer writer, String selfUser) throws IOException {
+    private void ParseMessage(String message, Writer writer, User selfUser) throws IOException {
 
-        if (!message.startsWith(":")) {
-            Chat activeChat = chatMap.get(selfUser);
-            if (activeChat == null){
-                return;
-            }
-            String userToSend;
-            if (activeChat.user1.equals(selfUser)){
-                userToSend = activeChat.user2;
-            }
-            else{
-                userToSend = activeChat.user1;
-            }
-            Socket  socket = connectedUser.get(userToSend);
-            OutputStream out = socket.getOutputStream();
-            BufferedWriter newWriter = new BufferedWriter(new OutputStreamWriter(out));
-            newWriter.write(message);
+        if (message == null || !message.startsWith(":")) {
+            writer.write("Error: Invalid Message Format\n");
+            writer.flush();
             return;
         }
 
-        String rest = message.substring(1);
+        String[] parts = message.substring(1).split(" ", 2);
+        String command = parts[0].toLowerCase();
+        String payload = (parts.length > 1) ? parts[1] : "";
+        String[] args = payload.isEmpty() ? new String[0] : payload.split(" ");
 
-        int space = rest.indexOf(' ');
-        String cmd;
-        String argsPart;
-
-        if (space == -1) {
-            cmd = rest;
-            argsPart = "";
-        } else {
-            cmd = rest.substring(0, space);
-            argsPart = rest.substring(space + 1).trim();
-        }
-
-        String[] args = argsPart.isEmpty()
-                ? new String[0]
-                : argsPart.split("\\s+");
-
-        switch (cmd){
-            case "login":
-                if (args.length < 1){
-                    writer.write("RESPONSE 400 INCORRECT_PARAMETERS");
+        switch (command) {
+            case "message":
+                if (payload.isEmpty()) {
+                    writer.write("ERR: Command ':message' requires a message.\n");
+                    writer.flush();
                     break;
                 }
-                String newName = args[0];
-                Socket clientSocket = connectedUser.remove(selfUser);
-                connectedUser.put(newName, clientSocket);
-                socketToUser.put(clientSocket, newName);
-                writer.write("RESPONSE 200 LOGIN_SUCCESS");
+
+                if (chatMap.get(selfUser) == null) {
+                    writer.write("ERR: Not connected to a chat.\n");
+                    writer.flush();
+                    break;
+                }
+
+                chatMap.get(selfUser).AddMessage(selfUser, payload);
+                chatMap.get(selfUser).MessageAllUsers(selfUser.Username+ ": " + payload);
+                writer.write("OK\n");
+                writer.flush();
                 break;
-            case "connect":
-                if (args.length < 1){
-                    writer.write("RESPONSE 400 INCORRECT_PARAMETERS");
+
+            case "join":
+                if (args.length != 1) {
+                    writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
+                    writer.flush();
                     break;
                 }
                 Chat chat = null;
-                for (int i=0; i<chatList.size(); i++){
-                    if (chatList.get(i).user1.equals(args[0]) && chatList.get(i).user2.equals(selfUser)){
+                for (int i = 0; i < chatList.size(); i++) {
+                    if (chatList.get(i).Chat_ID.equals(args[0])) {
                         chat = chatList.get(i);
-                        chatMap.put(selfUser, chat);
-                        writer.write("RESPONSE 200 CONNECTED");
                     }
                 }
-                if (chat == null){
-                    // TODO : SEND CONNECTED CMD
-                    chat = new Chat(selfUser, args[0]);
-                    chatMap.put(selfUser, chat);
-                    writer.write("RESPONSE 200 CONNECTED");
-                }
-                break;
-            case "disconnect":
-                if (chatMap.get(selfUser) == null){
-                    // TODO: SEND ERROR
+                if (chat == null) {
+                    writer.write("ERR: Server not found\n");
+                    writer.flush();
                     break;
                 }
-                Chat userChat = chatMap.get(selfUser);
-                if (!chatMap.containsKey(userChat.GetOther(selfUser))){
-                    chatList.remove(userChat);
+                if (chatMap.get(selfUser) != null) {
+                    chatMap.get(selfUser).DisconnectUser(selfUser);
                 }
-                else if (chatMap.get(userChat.GetOther(selfUser)).equals(userChat)){
-                    chatList.remove(userChat);
+                chat.AddUser(selfUser);
+                chatMap.put(selfUser, chat);
+                writer.write("OK\n");
+                writer.flush();
+                for (int i = 0; i < chat.Messages.size(); i++) {
+                    writer.write(chat.Messages.get(i).toString() + "\n");
                 }
-                chatMap.put(selfUser, null);
-                // TODO: SEND DISCONNECTED CMD
+                writer.flush();
                 break;
-            case "message": {
-                Chat activeChat = chatMap.get(selfUser);
-                if (activeChat == null) {
-                    // TODO: SEND ERR
-                    break;
-                }
-                String userToSend;
-                if (activeChat.user1.equals(selfUser)) {
-                    userToSend = activeChat.user2;
-                } else {
-                    userToSend = activeChat.user1;
-                }
-                Socket socket = connectedUser.get(userToSend);
-                OutputStream out = socket.getOutputStream();
-                BufferedWriter newWriter = new BufferedWriter(new OutputStreamWriter(out));
 
-                //TODO: SEND MSG CMD
-                newWriter.write("NOTIFICATION MESSAGE_SENT " + selfUser + " " + message);
-                break;
-            }
-            case "file": {
-                Chat activeChat = chatMap.get(selfUser);
-                if (activeChat == null) {
-                    writer.write("RESPONSE 400 NOT_IN_CHAT");
+            case "create":
+                if (args.length != 1) {
+                    writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
                     break;
                 }
-                String userToSend;
-                if (activeChat.user1.equals(selfUser)) {
-                    userToSend = activeChat.user2;
-                } else {
-                    userToSend = activeChat.user1;
-                }
-                activeChat.FileContents = args[0];
+                Chat newChat = new Chat(args[0]);
+                chatList.add(newChat);
+                writer.write("OK\n");
+                writer.flush();
+                break;
 
-                // TODO: SEND CONTENTS
-                break;
-            }
-            case "download": {
-                Chat activeChat = chatMap.get(selfUser);
-                if (activeChat == null) {
-                    //TODO: SEND ERR
+            case "username":
+                if (args.length != 1) {
+                    writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
                     break;
                 }
-                String userToSend;
-                if (activeChat.user1.equals(selfUser)) {
-                    userToSend = activeChat.user2;
-                } else {
-                    userToSend = activeChat.user1;
+                User otherUser = null;
+                for (int i = 0; i < userList.size(); i++) {
+                    if (userList.get(i).Username.equals(args[0])) {
+                        otherUser = userList.get(i);
+                    }
                 }
-                if (activeChat.FileContents == null || activeChat.FileContents.equals("")) {
-                    //TODO: SEND ERR
+                if (otherUser != null) {
+                    writer.write("ERR: Username already exists\n");
+                    writer.flush();
+                    break;
                 }
-                else {
-                    //TODO: SEND CMD
+                selfUser.Username = args[0];
+                writer.write("OK\n");
+                writer.flush();
+                break;
+
+            case "leave":
+                if (args.length != 0) {
+                    writer.write("ERR: Command ':" + command + "' takes no arguments.\n");
+                    writer.flush();
+                    break;
                 }
+                if (chatMap.get(selfUser) == null) {
+                    writer.write("ERR: Not connected to any server.\n");
+                    writer.flush();
+                    break;
+                }
+                chatMap.get(selfUser).DisconnectUser(selfUser);
+                chatMap.remove(selfUser);
+                writer.write("OK\n");
+                writer.flush();
+                break;
+
+            case "whisper": {
+                String[] whisperArgs = payload.split(" ", 2);
+                if (whisperArgs.length != 2) {
+                    writer.write("ERR: Command ':whisper' requires a username and a message.\n");
+                    writer.flush();
+                    break;
+                }
+
+                String targetName = whisperArgs[0];
+                String messageText = whisperArgs[1];
+
+                otherUser = null;
+                for (User u : userList) {
+                    if (u.Username.equals(targetName)) {
+                        otherUser = u;
+                        break;
+                    }
+                }
+
+                if (otherUser == null) {
+                    writer.write("ERR: Username not found.\n");
+                    writer.flush();
+                    break;
+                }
+
+                otherUser.UserBufferedWriter.write(selfUser.Username + " whispered to you: " + messageText + "\n");
+                otherUser.UserBufferedWriter.flush();
+
+                writer.write("OK\n");
+                writer.flush();
                 break;
             }
+
+
+            case "file":
+                int firstSpace = payload.indexOf(' ');
+                if (firstSpace == -1) {
+                    writer.write("ERR: Command ':file' requires filename and content\n");
+                    writer.flush();
+                    break;
+                }
+                String fileName = payload.substring(0, firstSpace);
+                String content = payload.substring(firstSpace + 1);
+                if (chatMap.get(selfUser) == null) {
+                    writer.write("ERR: Not connected to any server.\n");
+                    writer.flush();
+                    break;
+                }
+                var currentChat = chatMap.get(selfUser);
+                if (currentChat == null) {
+                    writer.write("ERR: Not in a chat room.\n");
+                    writer.flush();
+                    break;
+                }
+
+                String chatDirectory = currentChat.Chat_ID + "/files";
+
+                try {
+                    java.nio.file.Path dirPath = java.nio.file.Paths.get(chatDirectory);
+                    java.nio.file.Path filePath = dirPath.resolve(fileName);
+                    java.nio.file.Files.createDirectories(dirPath);
+                    java.nio.file.Files.writeString(filePath, content);
+                    currentChat.AddFile(selfUser, fileName);
+                    currentChat.MessageAllUsers("MSG: " + fileName);
+                    writer.write("OK\n");
+                } catch (IOException e) {
+                    writer.write("ERR: Could not save file to " + chatDirectory + "\n");
+                }
+                writer.flush();
+                break;
+
+            case "download":
+                if (args.length != 1) {
+                    writer.write("ERR: Command ':download' requires 1 argument (filename).\n");
+                    writer.flush();
+                    break;
+                }
+                String requestedFile = args[0];
+                chat = chatMap.get(selfUser);
+
+                if (chat == null) {
+                    writer.write("ERR: Not in a chat room.\n");
+                    writer.flush();
+                    break;
+                }
+                String filePathString = chat.Files.get(requestedFile);
+
+                if (filePathString == null) {
+                    writer.write("ERR: File not found in this chat.\n");
+                } else {
+                    try {
+                        java.nio.file.Path path = java.nio.file.Paths.get(filePathString);
+                        if (java.nio.file.Files.exists(path)) {
+                            String fileContent = java.nio.file.Files.readString(path);
+                            writer.write("FILE: " + "\"" + fileContent + "\"" + "\n");
+                        } else {
+                            writer.write("ERR: File reference exists but file is missing from disk.\n");
+                        }
+                    } catch (IOException e) {
+                        writer.write("ERR: Could not read file content.\n");
+                    }
+                }
+                writer.flush();
+                break;
+
+            case "list":
+                if (args.length != 0) {
+                    writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
+                    break;
+                }
+                for (int i = 0; i < chatList.size(); i++) {
+                    writer.write(chatList.get(i).toString() + "\n");
+                }
+                writer.flush();
+                break;
+
+            case "quit":
+                if (args.length != 0) {
+                    writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
+                    break;
+                }
+                writer.write("OK\n");
+                writer.flush();
+                break;
+
+            default:
+                writer.write("ERR: Unknown command '" + command + "'\n");
+                break;
         }
+        writer.flush();
     }
 
     public void main(String[] args) throws UnknownHostException {
@@ -186,10 +283,13 @@ public class ServerHandler {
                          BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out))) {
                         String line;
                         Random rand = new Random();
-                        socketToUser.put(clientSocket, "user"+rand.nextInt());
-                        //ASSIGN PLACEHOLDER
+                        User user = new User();
+                        user.Username = "user"+rand.nextInt(10000);
+                        user.UserSocket = clientSocket;
+                        user.UserBufferedWriter = writer;
+                        userList.add(user);
                         while ((line = reader.readLine()) != null) {
-                            ParseMessage(line, writer, socketToUser.get(clientSocket));
+                            ParseMessage(line, writer, user);
                         }
 
                     } catch (IOException e) {
