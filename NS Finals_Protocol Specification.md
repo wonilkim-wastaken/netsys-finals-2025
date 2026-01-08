@@ -96,3 +96,12 @@ For intuition, the structure imitated HTTP response code.
 - **CLIENT_JOINED**: Client joined the chat.
 - **CLIENT_LEFT**: Client left the chat.
 - **MESSAGE_SENT**: Client received the message. / Server sent the message.
+
+# Files
+- Files will be saved in Server and then sent to another client
+  - Sender(Client) -> Server -> Sendee(Client)
+- Clients will be informed when file is incoming
+- Clients can agree or disagree to receive file
+- When file receiving is declined, sender will be informed.
+- Progress bar will be displayed to both sender and sendee side
+- Sender should inform server file size and file stream.
