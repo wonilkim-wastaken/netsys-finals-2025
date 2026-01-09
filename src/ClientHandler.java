@@ -32,12 +32,10 @@ public class ClientHandler {
             serverWriter = writer;
             System.out.println("Connected to server.");
 
-            // Server listener
             Thread listener = new Thread(() -> listenToServer(serverReader));
             listener.setDaemon(true);
             listener.start();
 
-            // User input loop
             String input;
             while ((input = userInput.readLine()) != null) {
                 String normalized = normalizeInput(input);
@@ -62,8 +60,6 @@ public class ClientHandler {
         System.out.print("\033[1A"); // move cursor up
         System.out.print("\033[2K"); // clear entire line
     }
-
-    /* ================= Helpers ================= */
 
     private static void listenToServer(BufferedReader serverReader) {
         try {
@@ -155,11 +151,16 @@ public class ClientHandler {
                 System.out.println("Malformed FILE response.");
                 return;
             }
-
             String content = line.substring(firstQuote + 1, lastQuote);
 
-            // Last requested filename assumption
-            // In a real protocol this should be explicit
+            String escapedContent = line.substring(firstQuote + 1, lastQuote);
+
+            content = content.replace("\\n", "\n")
+                    .replace("\\\"", "\"")
+                    .replace("\\\\", "\\");
+            if (content.startsWith("\"") && content.endsWith("\"")) {
+                content = content.substring(1, content.length() - 1);}
+
             String filename = "downloaded_file";
 
             Files.writeString(Path.of(filename), content);
