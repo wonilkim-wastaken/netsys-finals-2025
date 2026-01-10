@@ -33,17 +33,20 @@ public class ServerHandler {
                 if (payload.isEmpty()) {
                     writer.write("ERR: Command ':message' requires a message.\n");
                     writer.flush();
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :message arguments");
                     break;
                 }
 
                 if (chatMap.get(selfUser) == null) {
                     writer.write("ERR: Not connected to a chat.\n");
+                    System.out.println("[WARN] " + selfUser.Username + " sent :message without connecting to the chat");
                     writer.flush();
                     break;
                 }
 
                 chatMap.get(selfUser).AddMessage(selfUser, payload);
                 chatMap.get(selfUser).MessageAllUsers(selfUser.Username+ ": " + payload);
+                System.out.println("[INFO] " + selfUser.Username + " sent msg " + payload);
                 writer.write("OK\n");
                 writer.flush();
                 break;
@@ -52,6 +55,7 @@ public class ServerHandler {
                 if (args.length != 1) {
                     writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
                     writer.flush();
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :join arguments");
                     break;
                 }
                 Chat chat = null;
@@ -62,6 +66,8 @@ public class ServerHandler {
                 }
                 if (chat == null) {
                     writer.write("ERR: Server not found\n");
+                    System.out.println("[INFO] " + selfUser.Username + " tried to join chat " + args[0]);
+                    System.out.println("[WARN] Chat " + args[0] + "does not exist!");
                     writer.flush();
                     break;
                 }
@@ -71,6 +77,7 @@ public class ServerHandler {
                 chat.AddUser(selfUser);
                 chatMap.put(selfUser, chat);
                 writer.write("OK\n");
+                System.out.println("[INFO] " + selfUser.Username + " joined chat " + args[0]);
                 writer.flush();
                 for (int i = 0; i < chat.Messages.size(); i++) {
                     writer.write(chat.Messages.get(i).toString() + "\n");
@@ -81,17 +88,20 @@ public class ServerHandler {
             case "create":
                 if (args.length != 1) {
                     writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :create argument");
                     break;
                 }
                 Chat newChat = new Chat(args[0]);
                 chatList.add(newChat);
                 writer.write("OK\n");
                 writer.flush();
+                System.out.println("[INFO] " + selfUser.Username + " created chat " + args[0]);
                 break;
 
             case "username":
                 if (args.length != 1) {
                     writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :create argument");
                     break;
                 }
                 User otherUser = null;
@@ -102,6 +112,8 @@ public class ServerHandler {
                 }
                 if (otherUser != null) {
                     writer.write("ERR: Username already exists\n");
+                    System.out.println("[INFO] " + selfUser.Username + " set name as " + args[0]);
+                    System.out.println("[WARN] " + args[0] + " already exists!");
                     writer.flush();
                     break;
                 }
@@ -114,17 +126,20 @@ public class ServerHandler {
                 if (args.length != 0) {
                     writer.write("ERR: Command ':" + command + "' takes no arguments.\n");
                     writer.flush();
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :leave argument");
                     break;
                 }
                 if (chatMap.get(selfUser) == null) {
                     writer.write("ERR: Not connected to any server.\n");
                     writer.flush();
+                    System.out.println("[WARN} " + selfUser.Username + " tried to leave chat but not connected to any server.");
                     break;
                 }
                 chatMap.get(selfUser).DisconnectUser(selfUser);
                 chatMap.remove(selfUser);
                 writer.write("OK\n");
                 writer.flush();
+                System.out.println("[INFO] " + selfUser.Username + " left chat");
                 break;
 
             case "whisper": {
@@ -132,6 +147,7 @@ public class ServerHandler {
                 if (whisperArgs.length != 2) {
                     writer.write("ERR: Command ':whisper' requires a username and a message.\n");
                     writer.flush();
+                    System.out.println("[WARN] " +  selfUser.Username + " sent invalid :whisper argument");
                     break;
                 }
 
@@ -149,6 +165,7 @@ public class ServerHandler {
                 if (otherUser == null) {
                     writer.write("ERR: Username not found.\n");
                     writer.flush();
+                    System.out.println("[INFO] " +  selfUser.Username + " tried to whisper " + targetName + "but not found");
                     break;
                 }
 
@@ -157,6 +174,7 @@ public class ServerHandler {
 
                 writer.write("OK\n");
                 writer.flush();
+                System.out.println("[INFO] " +  selfUser.Username + " tried to whisper " + targetName);
                 break;
             }
 
@@ -166,6 +184,7 @@ public class ServerHandler {
                 if (firstSpace == -1) {
                     writer.write("ERR: Command ':file' requires filename and content\n");
                     writer.flush();
+                    System.out.println("[WARN] " +  selfUser.Username + " sent invalid :file argument");
                     break;
                 }
                 String fileName = payload.substring(0, firstSpace);
@@ -173,12 +192,16 @@ public class ServerHandler {
                 if (chatMap.get(selfUser) == null) {
                     writer.write("ERR: Not connected to any server.\n");
                     writer.flush();
+                    System.out.println("[INFO] " +  selfUser.Username + " tried to send file "
+                            + fileName + ", but not connected to any server.");
                     break;
                 }
                 var currentChat = chatMap.get(selfUser);
                 if (currentChat == null) {
                     writer.write("ERR: Not in a chat room.\n");
                     writer.flush();
+                    System.out.println("[INFO] " +  selfUser.Username + " tried to send file "
+                            + fileName + ", but not in a chat room.");
                     break;
                 }
 
@@ -192,8 +215,11 @@ public class ServerHandler {
                     currentChat.AddFile(selfUser, fileName);
                     currentChat.MessageAllUsers("MSG: " + fileName);
                     writer.write("OK\n");
+                    System.out.println("[INFO] " +  selfUser.Username + " uploaded file " + fileName);
                 } catch (IOException e) {
                     writer.write("ERR: Could not save file to " + chatDirectory + "\n");
+                    System.out.println("[FAIL] " + selfUser.Username + " uploaded file " + fileName
+                            + " but could not save file to " + chatDirectory + "\n");
                 }
                 writer.flush();
                 break;
@@ -202,6 +228,7 @@ public class ServerHandler {
                 if (args.length != 1) {
                     writer.write("ERR: Command ':download' requires 1 argument (filename).\n");
                     writer.flush();
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :download argument");
                     break;
                 }
                 String requestedFile = args[0];
@@ -210,6 +237,7 @@ public class ServerHandler {
                 if (chat == null) {
                     writer.write("ERR: Not in a chat room.\n");
                     writer.flush();
+                    System.out.println("[WARN] " +  selfUser.Username + " tried to download file but not in a chat room");
                     break;
                 }
                 String filePathString = chat.Files.get(requestedFile);
@@ -222,11 +250,15 @@ public class ServerHandler {
                         if (java.nio.file.Files.exists(path)) {
                             String fileContent = java.nio.file.Files.readString(path);
                             writer.write("FILE: " + "\"" + fileContent + "\"" + "\n");
+                            System.out.println("[INFO] " +  selfUser.Username + " downloaded file " + requestedFile);
                         } else {
                             writer.write("ERR: File reference exists but file is missing from disk.\n");
+                            System.out.println("[FAIL] " + selfUser.Username + " tried to download file " + requestedFile);
+                            System.out.println("[FAIL] Reference for " + requestedFile + " exists, but file is missing from disk");
                         }
                     } catch (IOException e) {
                         writer.write("ERR: Could not read file content.\n");
+                        System.out.println("[FAIL] Could not read file content from file " + requestedFile);
                     }
                 }
                 writer.flush();
@@ -235,25 +267,30 @@ public class ServerHandler {
             case "list":
                 if (args.length != 0) {
                     writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :list argument");
                     break;
                 }
                 for (int i = 0; i < chatList.size(); i++) {
                     writer.write(chatList.get(i).toString() + "\n");
                 }
                 writer.flush();
+                System.out.println("[WARN] " +  selfUser.Username + " requested list of user associated to the caht");
                 break;
 
             case "quit":
                 if (args.length != 0) {
                     writer.write("ERR: Command ':" + command + "' requires 1 argument.\n");
+                    System.out.println("[WARN] " + selfUser.Username + " sent invalid :quit argument");
                     break;
                 }
                 writer.write("OK\n");
                 writer.flush();
+                System.out.println("[INFO] " +  selfUser.Username + " quitted");
                 break;
 
             default:
                 writer.write("ERR: Unknown command '" + command + "'\n");
+                System.out.println("[WARN] " + selfUser.Username + " sent unknown command " + command);
                 break;
         }
         writer.flush();
