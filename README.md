@@ -1,5 +1,5 @@
 # netsys-finals-2025
-# Requirements
+## Requirements
 JDK (Java Development Kit)  
 - Download from following [link](https://www.oracle.com/jp/java/technologies/downloads/) if you don't have one
 
@@ -12,7 +12,7 @@ If you got something like this, you installed JDK
 javac 25.0.1
 ```
 
-# How to Compile
+## How to Compile
 1. Clone the repo and forward to src folder
 2. Run following command in terminal
 ```bash
@@ -20,7 +20,7 @@ javac *.java
 ```
 This will compile every required files to run
 
-# Running the Server
+## Running the Server
 1. Forward to src folder
 2. Run following command in terminal
 ```bash
@@ -28,7 +28,7 @@ java ServerHandler <port>
 ```
 3. Use `Ctrl + C` to terminate server
 
-# Running the Client
+## Running the Client
 1. Forward to src folder
 2. Run following command in terminal
 ```bash
@@ -39,3 +39,8 @@ IP address in the command is IP address of the machine which server is running
 ```bash
 :quit 
 ```
+
+## Authors
+- Wonil Kim                (26002104635)
+- Sota Yatsugi             (26002404060)
+- Baatarsaikhan Naranbayar (26002404760)
