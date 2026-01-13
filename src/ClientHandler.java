@@ -71,7 +71,7 @@ public class ClientHandler {
         try {
             String line;
             while ((line = serverReader.readLine()) != null) {
-                System.out.print("\033[2K");
+                System.out.print("\r\033[2K");
 
                 if (line.equals("OK")) {
                     handleOk();
@@ -91,6 +91,7 @@ public class ClientHandler {
                     continue;
                 }
                 System.out.println(line);
+                printPrefix();
             }
         } catch (IOException e) {
             System.out.println("Disconnected from server.");
