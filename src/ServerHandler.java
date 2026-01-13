@@ -213,7 +213,7 @@ public class ServerHandler {
                     java.nio.file.Files.createDirectories(dirPath);
                     java.nio.file.Files.writeString(filePath, content);
                     currentChat.AddFile(selfUser, fileName);
-                    currentChat.MessageAllUsers("MSG: " + fileName);
+                    currentChat.MessageAllUsers(selfUser.Username + " sent a file: " + fileName);
                     writer.write("OK\n");
                     System.out.println("[INFO] " +  selfUser.Username + " uploaded file " + fileName);
                 } catch (IOException e) {
